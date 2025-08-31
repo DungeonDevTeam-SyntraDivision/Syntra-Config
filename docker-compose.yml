@@ -1,0 +1,78 @@
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-LOCAL}
+      POSTGRES_USER: ${DB_USER:-alaric}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-alaric}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/createTable.sql:/docker-entrypoint-initdb.d/01-createTable.sql
+      - ./main/lib/createTable.sql:/docker-entrypoint-initdb.d/02-main-createTable.sql
+      - ./enrollment/lib/createTable.sql:/docker-entrypoint-initdb.d/03-enrollment-createTable.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syntra_user -d syntra_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Main Application (Admin Dashboard)
+  main-app:
+    build:
+      context: .
+      dockerfile: ./main/Dockerfile
+    image: hatdog1234/syntra-main
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-alaric}:${DB_PASSWORD:-alaric}@database:5432/${DB_NAME:-LOCAL}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    ports:
+      - "3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./main/.env.local:/app/main/.env.local:ro
+
+  # Enrollment Application
+  enrollment-app:
+    build:
+      context: .
+      dockerfile: ./enrollment/Dockerfile
+    image: hatdog1234/syntra-enrollment
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-alaric}:${DB_PASSWORD:-alaric}@database:5432/${DB_NAME:-LOCAL}
+    ports:
+      - "9000:9000"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./enrollment/.env.local:/app/enrollment/.env.local:ro
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - main-app
+      - enrollment-app
+    profiles:
+      - proxy
+
+volumes:
+  postgres_data:
