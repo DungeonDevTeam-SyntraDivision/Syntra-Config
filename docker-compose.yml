@@ -10,8 +10,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./data/createTable.sql:/docker-entrypoint-initdb.d/01-createTable.sql
-      - ./main/lib/createTable.sql:/docker-entrypoint-initdb.d/02-main-createTable.sql
-      - ./enrollment/lib/createTable.sql:/docker-entrypoint-initdb.d/03-enrollment-createTable.sql
     ports:
       - "5432:5432"
     healthcheck:
@@ -57,6 +55,15 @@ services:
         condition: service_healthy
     volumes:
       - ./enrollment/.env.local:/app/enrollment/.env.local:ro
+  
+  # PG ADMIN
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+        PGADMIN_DEFAULT_EMAIL: 'admin@syntra.com'
+        PGADMIN_DEFAULT_PASSWORD: 'markSuperUser72910'
+    ports:
+        - 16543:80
 
   # Nginx Reverse Proxy (Optional)
   nginx:
