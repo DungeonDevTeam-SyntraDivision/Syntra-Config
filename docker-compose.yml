@@ -1,15 +1,17 @@
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database with Pre-loaded Data
   database:
-    image: postgres:16-alpine
+    build:
+      context: ./data
+      dockerfile: Dockerfile
+    image: hatdog1234/syntra-database
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-LOCAL}
-      POSTGRES_USER: ${DB_USER:-alaric}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-alaric}
+      POSTGRES_DB: "LOCAL"
+      POSTGRES_USER: "alaric"
+      POSTGRES_PASSWORD: "alaric"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./data/createTable.sql:/docker-entrypoint-initdb.d/01-createTable.sql
     ports:
       - "5432:5432"
     healthcheck:
@@ -20,6 +22,11 @@ services:
 
   # Main Application (Admin Dashboard)
   main-app:
+    privileged: true
+    pid: host
+    cap_add:
+      - SYS_ADMIN
+      - SYS_BOOT
     build:
       context: .
       dockerfile: ./main/Dockerfile
@@ -27,9 +34,9 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-alaric}:${DB_PASSWORD:-alaric}@database:5432/${DB_NAME:-LOCAL}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      DATABASE_URL: "postgresql://alaric:alaric@database:5432/LOCAL"
+      ADMIN_USERNAME: "syntra-admin"
+      ADMIN_PASSWORD: "syntra-admin-password-123"
     ports:
       - "3000:3000"
     depends_on:
@@ -37,25 +44,8 @@ services:
         condition: service_healthy
     volumes:
       - ./main/.env.local:/app/main/.env.local:ro
+      - /run/systemd:/run/systemd:ro
 
-  # Enrollment Application
-  enrollment-app:
-    build:
-      context: .
-      dockerfile: ./enrollment/Dockerfile
-    image: hatdog1234/syntra-enrollment
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-alaric}:${DB_PASSWORD:-alaric}@database:5432/${DB_NAME:-LOCAL}
-    ports:
-      - "9000:9000"
-    depends_on:
-      database:
-        condition: service_healthy
-    volumes:
-      - ./enrollment/.env.local:/app/enrollment/.env.local:ro
-  
   # PG ADMIN
   pgadmin:
     image: dpage/pgadmin4
@@ -64,20 +54,25 @@ services:
         PGADMIN_DEFAULT_PASSWORD: 'markSuperUser72910'
     ports:
         - 16543:80
+    depends_on:
+      database:
+        condition: service_healthy
 
-  # Nginx Reverse Proxy (Optional)
+
+  # Nginx Reverse Proxy with Custom Configuration (Optional)
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: hatdog1234/syntra-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - main-app
-      - enrollment-app
     profiles:
       - proxy
 
