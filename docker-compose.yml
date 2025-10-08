@@ -48,15 +48,10 @@ services:
 
   # PG ADMIN
   pgadmin:
-    build:
-      context: ./pgadmin
-      dockerfile: Dockerfile
-    image: hatdog1234/syntra-pgadmin
+    image: dpage/pgadmin4
     environment:
         PGADMIN_DEFAULT_EMAIL: 'admin@syntra.com'
         PGADMIN_DEFAULT_PASSWORD: 'markSuperUser72910'
-        PGADMIN_CONFIG_SERVER_MODE: 'False'
-        PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
         - 16543:80
     depends_on:
