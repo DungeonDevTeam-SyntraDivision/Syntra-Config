@@ -4,7 +4,7 @@ services:
     build:
       context: ./data
       dockerfile: Dockerfile
-    image: hatdog1234/syntra-database
+    image: registry.icoded.net/hatdog/icodednet/hatdog1234/syntra-database:prod
     restart: unless-stopped
     environment:
       POSTGRES_DB: "LOCAL"
@@ -30,25 +30,41 @@ services:
     build:
       context: .
       dockerfile: ./main/Dockerfile
-    image: hatdog1234/syntra-main
+    image: registry.icoded.net/hatdog/icodednet/hatdog1234/syntra-main-app:production
+    container_name: syntra-main-app
     restart: unless-stopped
     environment:
       NODE_ENV: production
       DATABASE_URL: "postgresql://alaric:alaric@database:5432/LOCAL"
       ADMIN_USERNAME: "syntra-admin"
       ADMIN_PASSWORD: "syntra-admin-password-123"
+      REDIS_URL: "redis://redis:6379"
     ports:
       - "3000:3000"
     depends_on:
       database:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./main/.env.local:/app/main/.env.local:ro
       - /run/systemd:/run/systemd:ro
 
+  # Redis
+  redis:
+    image: redis:8.0.2-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # PG ADMIN
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:9.2
     environment:
         PGADMIN_DEFAULT_EMAIL: 'admin@syntra.com'
         PGADMIN_DEFAULT_PASSWORD: 'markSuperUser72910'
@@ -59,12 +75,12 @@ services:
         condition: service_healthy
 
 
-  # Nginx Reverse Proxy with Custom Configuration (Optional)
+  # Nginx Reverse Proxy with Custom Configuration 
   nginx:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    image: hatdog1234/syntra-nginx
+    image: registry.icoded.net/hatdog/icodednet/hatdog1234/syntra-nginx:production
     restart: unless-stopped
     ports:
       - "80:80"
