@@ -1,0 +1,11 @@
+Description=HotSpot On Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/home/Documents/Syntra-Config/start.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
