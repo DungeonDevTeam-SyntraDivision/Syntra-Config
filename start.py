@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import shutil
 
 URL = "http://localhost:3000/display"
 
@@ -31,8 +30,7 @@ options.add_argument("--remote-debugging-port=9222")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 
-chromedriver_path = shutil.which("chromedriver") or "/snap/chromium/current/usr/lib/chromium-browser/chromedriver"
-service = Service(chromedriver_path)
+service = Service("/snap/chromium/current/usr/lib/chromium-browser/chromedriver")
 driver = webdriver.Chrome(service=service, options=options)
 driver.get(URL)
 
