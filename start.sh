@@ -5,4 +5,4 @@ sudo hotspot-on
 docker compose up -d
 sleep 15 
 source ~/Documents/Syntra-Config/.venv/bin/activate
-python ~/Documents/Syntra-Config/start.py
+python3 ~/Documents/Syntra-Config/start.py
