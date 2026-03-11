@@ -1,11 +1,15 @@
-Description=HotSpot On Service
-After=network.target
+[Unit]
+Description=HotSpot
+Wants=NetworkManager.service docker.service
+After=NetworkManager.service docker.service graphical.target
+
 
 [Service]
-Type=simple
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/home/syntra/Documents/Syntra-Config/start.sh
+WorkingDirectory=/home/syntra/Documents/Syntra-Config
 User=root
-ExecStart=/home/Documents/Syntra-Config/start.sh
-Restart=always
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target
