@@ -1,10 +1,7 @@
 services:
   # PostgreSQL Database with Pre-loaded Data
   database:
-    build:
-      context: ./data
-      dockerfile: Dockerfile
-    image: registry.icoded.net/hatdog/icodednet/hatdog1234/syntra-database:prod
+    image: postgres:16.8-alpine3.21
     restart: unless-stopped
     environment:
       POSTGRES_DB: "LOCAL"
@@ -13,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5444:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U alaric -d LOCAL"]
       interval: 10s
@@ -39,23 +36,23 @@ services:
       ADMIN_USERNAME: "syntra-admin"
       ADMIN_PASSWORD: "syntra-admin-password-123"
       REDIS_URL: "redis://redis:6379"
+      JWT_SECRET: "master_hatdog"
     ports:
       - "3000:3000"
+    volumes:
+      - /run/systemd:/run/systemd:ro
     depends_on:
       database:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./main/.env.local:/app/main/.env.local:ro
-      - /run/systemd:/run/systemd:ro
 
   # Redis
   redis:
     image: redis:8.0.2-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6333:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -70,9 +67,7 @@ services:
         PGADMIN_DEFAULT_PASSWORD: 'markSuperUser72910'
     ports:
         - 16543:80
-    depends_on:
-      database:
-        condition: service_healthy
+    
 
 
   # Nginx Reverse Proxy with Custom Configuration 
@@ -87,8 +82,6 @@ services:
       - "443:443"
     volumes:
       - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - main-app
-
+    
 volumes:
   postgres_data:
