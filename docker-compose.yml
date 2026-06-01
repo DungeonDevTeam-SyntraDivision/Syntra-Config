@@ -1,5 +1,5 @@
 services:
-  # PostgreSQL Database with Pre-loaded Data
+  # PostgreSQL Database (schema + seed handled by main-app on boot via Prisma)
   database:
     image: postgres:16.8-alpine3.21
     restart: unless-stopped
@@ -27,7 +27,7 @@ services:
     build:
       context: .
       dockerfile: ./main/Dockerfile
-    image: registry.icoded.net/hatdog/icodednet/hatdog1234/syntra-main-app:production
+    image: ghcr.io/alaricespina/syntra/main:production
     container_name: syntra-main-app
     restart: unless-stopped
     environment:
@@ -75,7 +75,7 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    image: registry.icoded.net/hatdog/icodednet/hatdog1234/syntra-nginx:production
+    image: ghcr.io/alaricespina/syntra/nginx:production
     restart: unless-stopped
     ports:
       - "80:80"
